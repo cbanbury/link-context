@@ -11,6 +11,7 @@
   "dependencies": {
     "hapi": "^7.5.2",
     "joi": "^4.9.0",
+    "mongodb": "^1.4.22",
     "shortid": "^2.1.3"
   }
 }
