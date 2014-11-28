@@ -79,7 +79,7 @@ All config is currently stored in `server.js`. This and much of the code will be
     <td>PORT</td><td>Port the server will run on (default 8000)</td>
   </tr>
   <tr>
-    <td>DOMAIN</td><td></td>
+    <td>DOMAIN</td><td>Domain your server is running, e.g. http://asc.li</td>
   </tr>
 </table>
 
