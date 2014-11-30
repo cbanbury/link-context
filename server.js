@@ -21,8 +21,12 @@ MongoClient.connect('mongodb://localhost:27017/asc', function (err, db) {
 var SEED = 1;
 var PORT = 8000;
 var DOMAIN = 'localhost';
+
 var BASE_ROUTE = 'http://' + DOMAIN + ':' + PORT + '/';
 
+if (PORT === 80) {
+  BASE_ROUTE = 'http://' + DOMAIN + '/';
+}
 
 // SECTION: Main app
 shortId.seed(SEED);
@@ -87,7 +91,13 @@ server.route({
         result.clicks = 1;
       }
 
-      return reply.redirect(url.format(result.redirect.toString()));
+      _db.update({link: search}, result, function (err) {
+        if (err) {
+          console.log('Error saving clicks ' + JSON.stringify(result));
+        }
+
+        return reply.redirect(url.format(result.redirect.toString()));
+      });
     });
   }
 });
