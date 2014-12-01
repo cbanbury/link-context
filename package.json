@@ -2,7 +2,7 @@
   "name": "data-link",
   "version": "0.0.0",
   "description": "A short url generator, allowing for arbitary data to be attributed to the link",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
