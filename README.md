@@ -50,8 +50,8 @@ TODO: Ability to fetch data by matching against part of the context assigned to 
 ### Running Locally
 If you don't want to use http://asc.li and would rather run your own instance, its as easy as:
 
-    $ npm install context
-    $ cd node_modules/context
+    $ npm install link-context
+    $ cd node_modules/link-context
     $ npm start
 
 Requirements:
