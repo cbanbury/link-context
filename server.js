@@ -1,3 +1,5 @@
+'use strict'
+
 var Hapi = require('hapi');
 var Joi = require('joi');
 var shortId = require('shortid');
@@ -81,8 +83,8 @@ server.route({
         return reply(500);
       }
 
-      if (!result) {
-        return reply('Error: link broken.');
+      if (!result || !result.redirect) {
+        return reply(404);
       }
 
       if (result.clicks) {
@@ -102,6 +104,7 @@ server.route({
   }
 });
 
+// TODO: deprecate/consolidate into the search route
 // get by data route
 server.route({
   method: 'GET',
@@ -115,7 +118,7 @@ server.route({
     jsonp: 'callback'
   },
   handler: function (request, reply) {
-    _db.findOne({link: request.query.path}, function (err, result) {
+    _db.findOne({link: request.query.path}, {_id: 0}, function (err, result) {
       if (err) {
         return reply(500);
       }
@@ -124,15 +127,39 @@ server.route({
         return reply('No context matching requested path.')
       }
 
-      delete result._id;
-
       return reply(result);
     });
   }
 });
 
+// match on context
+server.route({
+  method: 'GET',
+  path: '/search/',
+  config: {
+    validate: {
+      query: {
+        context: Joi.string()
+      }
+    },
+    jsonp: 'callback'
+  },
+  handler: function (request, reply) {
+    if (request.query && request.query.context) {
+      _db.find({context: { $regex: request.query.context }}, {_id: 0}).toArray(function (err, result) {
+        if (err) {
+          return reply(500);
+        }
+
+        return reply(result);
+      });
+    }
+  }
+});
+
 process.on('message', function (message) {
   if (message === 'shutdown') {
+    // TODO: gracefully exit instead of instant termination
     process.exit(0);
   }
 });
