@@ -32,7 +32,7 @@ if (PORT === 80) {
 // SECTION: Main app
 shortId.seed(SEED);
 
-var server = new Hapi.Server(DOMAIN, PORT);
+var server = new Hapi.Server(PORT);
 
 // new link route
 server.route({
@@ -77,7 +77,7 @@ server.route({
   handler: function (request, reply) {
     console.log('User agent for click:')
     console.log(request.headers['user-agent']);
-    
+
     var search = BASE_ROUTE + request.params.id;
 
     _db.findOne({link: search}, function (err, result) {
