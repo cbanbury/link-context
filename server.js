@@ -19,9 +19,9 @@ MongoClient.connect('mongodb://localhost:27017/asc', function (err, db) {
 });
 
 // SECTION: App config
-var SEED = 1;
-var PORT = 8000;
-var DOMAIN = 'localhost';
+var SEED = process.env.CONTEXT_SEED || 1;
+var PORT = process.env.CONTEXT_PORT || 8000;
+var DOMAIN = process.env.CONTEXT_DOMAIN || 'localhost';
 
 var BASE_ROUTE = 'http://' + DOMAIN + ':' + PORT + '/';
 
@@ -75,8 +75,9 @@ server.route({
       }
   },
   handler: function (request, reply) {
-    console.log('getting a hit! ')
+    console.log('User agent for click:')
     console.log(request.headers['user-agent']);
+    
     var search = BASE_ROUTE + request.params.id;
 
     _db.findOne({link: search}, function (err, result) {
