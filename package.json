@@ -4,7 +4,7 @@
   "description": "A short url generator, allowing for arbitary data to be attributed to the link",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node_modules/.bin/_mocha tests/*"
   },
   "author": "Carl Banbury",
   "license": "GPL-3.0+",

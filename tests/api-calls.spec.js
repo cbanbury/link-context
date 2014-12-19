@@ -1,6 +1,13 @@
 'use strict';
 
-describe('GET /create/new/link', function () {
+var request = require('supertest');
+var supertestChai = require('supertest-chai');
+
+var chai = require('chai');
+chai.use(supertestChai.httpAsserts);
+
+describe.skip('GET /create/new/link', function () {
+
   it('should respond with 400 if `redirect` parameter not provided', function () {
 
   });
@@ -68,6 +75,27 @@ describe('GET /{id}', function () {
   });
 
   it('should still redirect if unable to update the number of clicks', function () {
+
+  });
+});
+
+describe('GET /search/', function () {
+  it('should respond with empty array if `context` parameter not provided', function () {
+  });
+
+  it('should respond with 500 if unable to query database', function () {
+
+  });
+
+  it('should respond with array of results matching context', function () {
+
+  });
+
+  it('should match context as a regex search anywhere in the context', function () {
+
+  });
+
+  it('should not include the _id in the returned results', function () {
 
   });
 });

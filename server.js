@@ -5,7 +5,6 @@ var Joi = require('joi');
 var shortId = require('shortid');
 var url = require('url');
 
-
 // SECTION: Database configuration
 var MongoClient = require('mongodb').MongoClient;
 
@@ -76,6 +75,8 @@ server.route({
       }
   },
   handler: function (request, reply) {
+    console.log('getting a hit! ')
+    console.log(request.headers['user-agent']);
     var search = BASE_ROUTE + request.params.id;
 
     _db.findOne({link: search}, function (err, result) {
@@ -145,14 +146,18 @@ server.route({
     jsonp: 'callback'
   },
   handler: function (request, reply) {
-    if (request.query && request.query.context) {
-      _db.find({context: { $regex: request.query.context }}, {_id: 0}).toArray(function (err, result) {
+    if (request.query.context) {
+      var query = {context: { $regex: request.query.context }};
+
+      _db.find(query, {_id: 0}).toArray(function (err, result) {
         if (err) {
           return reply(500);
         }
 
         return reply(result);
       });
+    } else {
+      return reply([]);
     }
   }
 });
@@ -168,3 +173,7 @@ process.on('message', function (message) {
 server.start(function () {
   if (process.send) process.send('online');
 });
+
+module.exports = {
+  server: server
+};
