@@ -30,7 +30,7 @@ if (+PORT === 80) {
 }
 
 // SECTION: Main app
-shortId.seed(SEED);
+shortId.seed(+SEED);
 
 var server = new Hapi.Server(PORT);
 
