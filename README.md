@@ -45,7 +45,27 @@ Example:
 Here we have retrieved the data from the example above. Currently the only additional data tracked is the number of `clicks` the link has had.
 
 #### Match on context `GET /link/context/`
-TODO: Ability to fetch data by matching against part of the context assigned to the link
+
+```
+http://localhost/search/?context=`CONTEXT`
+```
+
+`CONTEXT` The context you want to search for (does not need to be exact match)
+
+Example:
+
+```
+http://localhost/search/?context=bo
+
+response --> [{
+    "context": "bob",
+    "clicks": 17,
+    "link": "http://asc.li/obdkf21",
+    "redirect": "http://ubuntu.com"
+  }]
+```
+
+Here we have retrieved an array of objects matching the search criteria of `bo`. If no results are found an empty array is returned. 
 
 ### Running Locally
 If you don't want to use http://asc.li and would rather run your own instance, its as easy as:

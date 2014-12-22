@@ -25,7 +25,7 @@ var DOMAIN = process.env.CONTEXT_DOMAIN || 'localhost';
 
 var BASE_ROUTE = 'http://' + DOMAIN + ':' + PORT + '/';
 
-if (PORT === 80) {
+if (+PORT === 80) {
   BASE_ROUTE = 'http://' + DOMAIN + '/';
 }
 
