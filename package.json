@@ -9,6 +9,9 @@
   "author": "Carl Banbury",
   "license": "GPL-3.0+",
   "dependencies": {
+    "body-parser": "^1.10.0",
+    "express": "^4.10.6",
+    "express-validator": "^2.8.0",
     "hapi": "^7.5.2",
     "joi": "^4.9.0",
     "mongodb": "^1.4.22",
