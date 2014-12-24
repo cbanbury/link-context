@@ -1,8 +1,10 @@
-'use strict'
+'use strict';
 
-var Hapi = require('hapi');
-var Joi = require('joi');
+var express = require('express');
+var app = express();
 var shortId = require('shortid');
+var bodyParser = require('body-parser');
+var expressValidator = require('express-validator');
 var url = require('url');
 
 // SECTION: Database configuration
@@ -10,7 +12,13 @@ var MongoClient = require('mongodb').MongoClient;
 
 var _db;
 
-MongoClient.connect('mongodb://localhost:27017/asc', function (err, db) {
+var connectionString = 'mongodb://localhost:27017/asc';
+
+if (process.env.NODE_ENV === 'test') {
+  connectionString = 'mongodb://localhost:27017/link-context-test'
+}
+
+MongoClient.connect(connectionString, function (err, db) {
   if (err) {
     console.log('Error: Unable to connect to MongoDB');
   }
@@ -21,6 +29,11 @@ MongoClient.connect('mongodb://localhost:27017/asc', function (err, db) {
 // SECTION: App config
 var SEED = process.env.CONTEXT_SEED || 1;
 var PORT = process.env.CONTEXT_PORT || 8000;
+
+if (process.env.NODE_ENV === 'test') {
+    PORT = 8001;
+}
+
 var DOMAIN = process.env.CONTEXT_DOMAIN || 'localhost';
 
 var BASE_ROUTE = 'http://' + DOMAIN + ':' + PORT + '/';
@@ -31,150 +44,124 @@ if (+PORT === 80) {
 
 // SECTION: Main app
 shortId.seed(+SEED);
-
-var server = new Hapi.Server(PORT);
+app.use(bodyParser.json());
+app.use(expressValidator())
 
 // new link route
-server.route({
-  method: 'GET',
-  path: '/create/new/link/',
-  config: {
-    validate: {
-      query: {
-        redirect: Joi.string().required(),
-        context: Joi.string().required()
-      }
-    }
-  },
-  handler: function (request, reply) {
-    var link = BASE_ROUTE + shortId.generate();
+app.get('/v0/new/link/', function (req, res) {
+  req.assert('redirect', 'required').notEmpty().isURL();
+  req.assert('context', 'required').notEmpty();
 
-    _db.insert({
-      link: link,
-      redirect: request.query.redirect,
-      context: request.query.context
-    }, function (err) {
-      if (err) {
-        return reply('Error: Unable to save link data.');
-      }
-
-      return reply(link);
-    });
+  if (req.validationErrors()) {
+    return res.status(400).jsonp({error: 'Bad request'});
   }
+
+  var link = BASE_ROUTE + shortId.generate();
+
+  _db.insert({
+    link: link,
+    redirect: req.query.redirect,
+    context: req.query.context
+  }, function (err) {
+    if (err) {
+      return res.status(500).jsonp({error: 'Internal server error.'});
+    }
+
+    return res.jsonp(link);
+  });
 });
 
 // unique link and redirect route
-server.route({
-  method: 'GET',
-  path: '/{id}',
-  config: {
-      validate: {
-        params: {
-          id: Joi.string().regex(/[A-Za-z-_0-9]+/).required()
-        }
-      }
-  },
-  handler: function (request, reply) {
-    console.log('User agent for click:')
-    console.log(request.headers['user-agent']);
+app.get('/:id', function (req, res) {
+  req.assert('id', 'required').matches(/[A-Za-z-_0-9]+/);
 
-    var search = BASE_ROUTE + request.params.id;
-
-    _db.findOne({link: search}, function (err, result) {
-      if (err) {
-        return reply(500);
-      }
-
-      if (!result || !result.redirect) {
-        return reply(404);
-      }
-
-      if (result.clicks) {
-        result.clicks++;
-      } else {
-        result.clicks = 1;
-      }
-
-      _db.update({link: search}, result, function (err) {
-        if (err) {
-          console.log('Error saving clicks ' + JSON.stringify(result));
-        }
-
-        return reply.redirect(url.format(result.redirect.toString()));
-      });
-    });
+  if(req.validationErrors()) {
+    return res.sendStatus(400);
   }
+
+  console.log('User agent for click:')
+  console.log(req.headers['user-agent']);
+
+  var search = BASE_ROUTE + req.params.id;
+
+  _db.findOne({link: search}, function (err, result) {
+    if (err) {
+      return res.send(500).jsonp({error: 'Internal server error.'});
+    }
+
+    if (!result || !result.redirect) {
+      return res.send(404).jsonp({error: 'Not found.'});
+    }
+
+    if (result.clicks) {
+      result.clicks++;
+    } else {
+      result.clicks = 1;
+    }
+
+    _db.update({link: search}, result, function (err) {
+      if (err) {
+        console.log('Error saving clicks ' + JSON.stringify(result));
+      }
+
+      return res.redirect(url.format(result.redirect.toString()));
+    });
+  });
 });
 
 // TODO: deprecate/consolidate into the search route
 // get by data route
-server.route({
-  method: 'GET',
-  path: '/link/',
-  config: {
-    validate: {
-      query: {
-        path: Joi.string().required()
-      }
-    },
-    jsonp: 'callback'
-  },
-  handler: function (request, reply) {
-    _db.findOne({link: request.query.path}, {_id: 0}, function (err, result) {
-      if (err) {
-        return reply(500);
-      }
+app.get('/v0/link/', function (req, res) {
+  req.assert('path', 'required').notEmpty().isURL();
 
-      if (!result) {
-        return reply('No context matching requested path.')
-      }
-
-      return reply(result);
-    });
+  if (req.validationErrors()) {
+    return res.send(400).jsonp({error: 'Bad request'});
   }
+
+  _db.findOne({link: req.query.path}, {_id: 0}, function (err, result) {
+    if (err) {
+      return res.send(500).jsonp({error: 'Internal server error.'});
+    }
+
+    if (!result) {
+      return res.jsonp({});
+    }
+
+    return res.jsonp(result);
+  });
 });
 
 // match on context
-server.route({
-  method: 'GET',
-  path: '/search/',
-  config: {
-    validate: {
-      query: {
-        context: Joi.string()
-      }
-    },
-    jsonp: 'callback'
-  },
-  handler: function (request, reply) {
-    if (request.query.context) {
-      var query = {context: { $regex: request.query.context }};
+app.get('/v0/search/', function (req, res) {
+  req.assert('context', 'required').notEmpty();
 
-      _db.find(query, {_id: 0}).toArray(function (err, result) {
-        if (err) {
-          return reply(500);
-        }
-
-        return reply(result);
-      });
-    } else {
-      return reply([]);
-    }
+  if (req.validationErrors()) {
+    return res.jsonp([]);
   }
+
+  var query = {context: { $regex: req.query.context }};
+
+  _db.find(query, {_id: 0}).toArray(function (err, result) {
+    if (err) {
+      return res.send(500).jsonp({error: 'Internal server error.'});
+    }
+
+    return res.jsonp(result);
+  });
 });
 
 process.on('message', function (message) {
   if (message === 'shutdown') {
     // TODO: gracefully exit instead of instant termination
+    _db.close();
     process.exit(0);
   }
 });
 
+module.exports = app.listen(PORT, function () {
+  if (process.send) {
+    process.send('online');
+  }
 
-server.start(function () {
-  if (process.send) process.send('online');
+  console.log('server started on port: ' + PORT);
 });
-
-module.exports = {
-  server: server
-};
