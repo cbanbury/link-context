@@ -1,6 +1,6 @@
 {
   "name": "link-context",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "A short url generator, allowing for arbitary data to be attributed to the link",
   "main": "server.js",
   "scripts": {
