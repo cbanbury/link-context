@@ -5,6 +5,7 @@ var supertestChai = require('supertest-chai');
 var validator = require('validator');
 var chai = require('chai');
 chai.use(supertestChai.httpAsserts);
+var _ = require('lodash');
 
 var agent;
 var server = require('../server');
@@ -27,10 +28,68 @@ before(function (done) {
   });
 });
 
+afterEach(function () {
+  _links.drop();
+});
+
 after(function () {
   agent.app.close();
-  _links.drop();
   _db.close();
+});
+
+describe('GET /:id', function () {
+  it('should respond with 404 if :id contains invalid characters', function (done) {
+    agent.get('/ab?#@**^').expect(404, done);
+  });
+
+  it('should respond with 404 if no match is found for link', function (done) {
+    agent.get('/abcd123-_').expect(404, done);
+  });
+
+  it('should respond with 404 if match found but no valid redirect', function (done) {
+    _links.insert({
+      link: "http://localhost/abc123"
+    }, function (err) {
+      if (err) {
+        done(err);
+      }
+
+      agent.get('/abc123').expect(404, done);
+    });
+  });
+
+  it('should perform a temporary redirect, 302 on succss', function (done) {
+    var destination = 'http://mytest.com';
+
+    _links.insert({
+      link: "http://localhost:8001/abc123",
+      redirect: destination
+    }, function (err) {
+      if (err) {
+        done(err);
+      }
+
+      agent.get('/abc123').expect(302, done);
+    });
+  });
+
+  it('should redirect to the correct url stored against the link on success', function (done) {
+    var destination = 'http://mytest.com/';
+
+    _links.insert({
+      link: "http://localhost:8001/abc123",
+      redirect: destination
+    }, function (err) {
+      if (err) {
+        done(err);
+      }
+
+      agent.get('/abc123').end(function (err, res) {
+        chai.expect(res.headers.location).to.equal(destination);
+        done();
+      });
+    });
+  });
 });
 
 describe('GET /v0/new/link', function () {
@@ -77,49 +136,107 @@ describe('GET /v0/new/link', function () {
   });
 });
 
-describe('GET /{id}', function () {
-  it('should accept only valid shortid characters for {id}', function () {
-
+describe('GET /v0/search/', function () {
+  it('should respond with empty array if `context` parameter not provided', function (done) {
+    agent.get('/v0/search/').expect([], done);
   });
 
-  it('should respond with 500 if unable to query database', function () {
+  it('should respond with array of results matching context', function (done) {
+    var context = 'my test context';
 
+    var testData = [
+      { link: 'http://abc', redirect: 'http://bcd.com', context: context, 'clicks': 7},
+      { link: 'http://localhost/asd42_', redirect: 'http://wow.com', context: context},
+      { link: 'http://localhost/3252sff', redirect: 'http://foo.co.uk', context: context, clicks: 7, other_stat: 900}
+    ];
+
+    var expected = _.cloneDeep(testData);
+
+    testData.push({ link: 'http://localhost/1432ss', redirect: 'http://hidden.com', context: 'not included', clicks: 1});
+
+    _links.insert(testData, function (err) {
+      if (err) {
+        done(err);
+      }
+
+      agent.get('/v0/search/?context=' + context).end(function (err, result) {
+        chai.expect(result.body).to.eql(expected);
+        done();
+      });
+    });
   });
 
-  it('should respond with 404 if no match is found for link', function () {
+  it('should still respond with array if only one match is found', function (done) {
+    var context = 'my test context';
 
+    var testData = [
+      { link: 'http://abc', redirect: 'http://bcd.com', context: 'not included', 'clicks': 7},
+      { link: 'http://localhost/asd42_', redirect: 'http://wow.com', context: 'not included'},
+      { link: 'http://localhost/3252sff', redirect: 'http://foo.co.uk', context: 'not included', clicks: 7, other_stat: 900}
+    ];
+
+    var expected = { link: 'http://localhost/1432ss', redirect: 'http://hidden.com', context: context, clicks: 1};
+
+    testData.push(_.cloneDeep(expected));
+
+    _links.insert(testData, function (err) {
+      if (err) {
+        done(err);
+      }
+
+      agent.get('/v0/search/?context=' + context).end(function (err, result) {
+        chai.expect(result.body.length).to.equal(1);
+        chai.expect(result.body[0]).to.eql(expected);
+        done();
+      });
+    });
   });
 
-  it('should respond with 404 if match found but no valid redirect', function () {
+  it('should match context as a regex', function (done) {
+    var common = 'woah';
 
+    var testData = [
+     { link: 'http://abc', redirect: 'http://bcd.com', context: 'woah', 'clicks': 7},
+     { link: 'http://localhost/asd42_', redirect: 'http://wow.com', context: '+1=woah?//'},
+     { link: 'http://localhost/3252sff', redirect: 'http://foo.co.uk', context: 'almost woah not', clicks: 7, other_stat: 900}
+    ];
+
+    var expected = _.cloneDeep(testData);
+
+    _links.insert(testData, function (err) {
+      if (err) {
+       done(err);
+      }
+
+      agent.get('/v0/search/?context=' + common).end(function (err, result) {
+        chai.expect(result.body).to.eql(expected);
+        done();
+      });
+    });
   });
 
-  it('should redirect to the correct url stored against the link on success', function () {
+  it('should not include the _id in the returned results', function (done) {
+    var context = 'my test context';
 
-  });
+    var testData = [
+     { link: 'http://abc', redirect: 'http://bcd.com', context: 'not included', 'clicks': 7},
+     { link: 'http://localhost/asd42_', redirect: 'http://wow.com', context: 'not included'},
+     { link: 'http://localhost/3252sff', redirect: 'http://foo.co.uk', context: 'not included', clicks: 7, other_stat: 900}
+    ];
 
-  it('should still redirect if unable to update the number of clicks', function () {
+    var expected = { link: 'http://localhost/1432ss', redirect: 'http://hidden.com', context: context, clicks: 1};
 
-  });
-});
+    testData.push(_.cloneDeep(expected));
 
-describe('GET /search/', function () {
-  it('should respond with empty array if `context` parameter not provided', function () {
-  });
+    _links.insert(testData, function (err) {
+      if (err) {
+        done(err);
+      }
 
-  it('should respond with 500 if unable to query database', function () {
-
-  });
-
-  it('should respond with array of results matching context', function () {
-
-  });
-
-  it('should match context as a regex search anywhere in the context', function () {
-
-  });
-
-  it('should not include the _id in the returned results', function () {
-
+      agent.get('/v0/search/?context=' + context).end(function (err, result) {
+        chai.expect(result.body[0]._id).to.not.exist;
+        done();
+      });
+    });
   });
 });

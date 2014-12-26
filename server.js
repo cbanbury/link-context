@@ -76,7 +76,7 @@ app.get('/:id', function (req, res) {
   req.assert('id', 'required').matches(/[A-Za-z-_0-9]+/);
 
   if(req.validationErrors()) {
-    return res.sendStatus(400);
+    return res.status(404).jsonp({error: 'Not found.'});
   }
 
   console.log('User agent for click:')
@@ -86,11 +86,15 @@ app.get('/:id', function (req, res) {
 
   _db.findOne({link: search}, function (err, result) {
     if (err) {
-      return res.send(500).jsonp({error: 'Internal server error.'});
+      return res.status(500).jsonp({error: 'Internal server error.'});
     }
 
     if (!result || !result.redirect) {
-      return res.send(404).jsonp({error: 'Not found.'});
+      return res.status(404).jsonp({error: 'Not found.'});
+    }
+
+    if (search === result.redirect) {
+      return res.status(404).jsonp({error: 'Not found.'});
     }
 
     if (result.clicks) {
@@ -115,12 +119,12 @@ app.get('/v0/link/', function (req, res) {
   req.assert('path', 'required').notEmpty().isURL();
 
   if (req.validationErrors()) {
-    return res.send(400).jsonp({error: 'Bad request'});
+    return res.status(400).jsonp({error: 'Bad request'});
   }
 
   _db.findOne({link: req.query.path}, {_id: 0}, function (err, result) {
     if (err) {
-      return res.send(500).jsonp({error: 'Internal server error.'});
+      return res.status(500).jsonp({error: 'Internal server error.'});
     }
 
     if (!result) {
@@ -143,7 +147,7 @@ app.get('/v0/search/', function (req, res) {
 
   _db.find(query, {_id: 0}).toArray(function (err, result) {
     if (err) {
-      return res.send(500).jsonp({error: 'Internal server error.'});
+      return res.status(500).jsonp({error: 'Internal server error.'});
     }
 
     return res.jsonp(result);
