@@ -21,7 +21,9 @@ Example:
 
     http://asc.li/v0/new/link?context=bob&redirect=http://ubunutu.com
 
-    response --> http://asc.li/obdkf21
+    response --> {
+      "link": "http://asc.li/obdkf21"
+    }
 
 This attaches the data `bob` to our link and will redirect to `http://ubuntu.com` when someone clicks on the new `http://asc.li/obdkf21` link.
 

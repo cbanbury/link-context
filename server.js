@@ -67,7 +67,7 @@ app.get('/v0/new/link/', function (req, res) {
       return res.status(500).jsonp({error: 'Internal server error.'});
     }
 
-    return res.jsonp(link);
+    return res.jsonp({uri: link});
   });
 });
 

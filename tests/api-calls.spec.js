@@ -111,7 +111,7 @@ describe('GET /v0/new/link', function () {
         done(err);
       }
 
-      chai.expect(validator.isURL(res.body)).to.be.true;
+      chai.expect(validator.isURL(res.body.uri)).to.be.true;
       done();
     });
   });
@@ -122,7 +122,7 @@ describe('GET /v0/new/link', function () {
         done(err);
       }
 
-      chai.expect(validator.contains(res.body, 'localhost')).to.be.true;
+      chai.expect(validator.contains(res.body.uri, 'localhost')).to.be.true;
       done();
     });
   });
