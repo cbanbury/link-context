@@ -1,4 +1,10 @@
 #!/bin/bash
+# Manually configure
+CONTEXT_SEED=1
+CONTEXT_PORT=8000
+CONTEXT_DOMAIN="localhost"
+SERVER_DIR=
+
 NAME=link-context
 IPC=/var/run/link-context/$NAME.ipc
 DESC="link-context server"
@@ -8,7 +14,7 @@ WORKERS=1
 case "$1" in
   start)
     echo -n "Starting $DESC: "
-    naught start --worker-count $WORKERS --ipc-file $IPC --log $LOG_DIR/naught.log --stdout $LOG_DIR/stdout.log --stderr $LOG_DIR/stderr.log --cwd $CONTEXT_CWD $CONTEXT_CWD/server.js
+    naught start --worker-count $WORKERS --ipc-file $IPC --log $LOG_DIR/naught.log --stdout $LOG_DIR/stdout.log --stderr $LOG_DIR/stderr.log --cwd $SERVER_DIR $SERVER_DIR/server.js
     exit $?
   ;;
   stop)
