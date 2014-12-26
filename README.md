@@ -87,23 +87,24 @@ In you want the server running constantly, bring it up with [naught](https://www
 Requirements:
 - naught installed globally
 
+If you're using naught and running Ubuntu, take a look at the `service.sh` file. Copy it to `/etc/init.d/link-context` and
+set the `CONTEXT_CWD` variable (see below) to use:
+
+```
+# Start, stop, restart the server
+$ service link-context start | stop | restart
+```
+
 ##### CONFIG
 Configuration can be done by setting the following environmental variables.
 
-<table>
-  <tr>
-    <td>Environmental Variable</td><td>Description</td>
-  </tr>
-  <tr>
-    <td>CONTEXT_SEED</td><td>[shortid](https://www.npmjs.org/package/shortid) seed </td>
-  </tr>
-  <tr>
-    <td>CONTEXT_PORT</td><td>Port the server will run on (default 8000)</td>
-  </tr>
-  <tr>
-    <td>CONTEXT_DOMAIN</td><td>Domain your server is running, e.g. http://asc.li</td>
-  </tr>
-</table>
+| Environmental Variable | Description                                                              |
+|------------------------:--------------------------------------------------------------------------|
+| CONTEXT_SEED           | [shortid](https://www.npmjs.org/package/shortid) seed                    |
+| CONTEXT_PORT           | Port the server will run on (default 8000)                               |
+| CONTEXT_DOMAIN         | Domain your server is running, e.g. http://asc.li                        |
+| CONTEXT_CWD            | Path where you have link-context locally, e.g. `/usr/local/link-context` |
+
 
 ### Authentication
 
