@@ -91,7 +91,7 @@ Requirements:
 
 If you're using naught and running Ubuntu, take a look at the `service.sh` file. Copy it to `/etc/init.d/link-context` and
 setup the configuration variables as defined below in the service file. `SERVER_DIR` also needs to be defined, which should be where
-you have link-context installed. 
+you have link-context installed.
 
 ```
 # Start, stop, restart the server
@@ -102,7 +102,7 @@ $ service link-context start | stop | restart
 Configuration can be done by setting the following environmental variables.
 
 | Environmental Variable | Description                                                              |
-|------------------------:--------------------------------------------------------------------------|
+|:-----------------------|:-------------------------------------------------------------------------|
 | CONTEXT_SEED           | [shortid](https://www.npmjs.org/package/shortid) seed                    |
 | CONTEXT_PORT           | Port the server will run on (default 8000)                               |
 | CONTEXT_DOMAIN         | Domain your server is running, e.g. http://asc.li                        |
