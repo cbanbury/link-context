@@ -4,6 +4,7 @@ var express = require('express');
 var app = express();
 var shortId = require('shortid');
 var bodyParser = require('body-parser');
+var device = require('express-device');
 var expressValidator = require('express-validator');
 var url = require('url');
 
@@ -45,7 +46,8 @@ if (+PORT === 80) {
 // SECTION: Main app
 shortId.seed(+SEED);
 app.use(bodyParser.json());
-app.use(expressValidator())
+app.use(expressValidator());
+app.use(device.capture());
 
 // new link route
 app.get('/v0/new/link/', function (req, res) {
@@ -79,9 +81,6 @@ app.get('/:id', function (req, res) {
     return res.status(404).jsonp({error: 'Not found.'});
   }
 
-  console.log('User agent for click:')
-  console.log(req.headers['user-agent']);
-
   var search = BASE_ROUTE + req.params.id;
 
   _db.findOne({link: search}, function (err, result) {
@@ -101,6 +100,20 @@ app.get('/:id', function (req, res) {
       result.clicks++;
     } else {
       result.clicks = 1;
+    }
+
+    var rawData = {
+      ip: req.connection.remoteAddress,
+      ua: req.headers['user-agent'],
+      type: req.device.type
+    };
+
+    if (result.raw) {
+      result.raw.clicks.push(rawData);
+    } else {
+      result.raw = {
+        clicks: [rawData]
+      };
     }
 
     _db.update({link: search}, result, function (err) {
