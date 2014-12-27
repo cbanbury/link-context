@@ -1,8 +1,8 @@
 #!/bin/bash
 # Manually configure
-CONTEXT_SEED=1
-CONTEXT_PORT=8000
-CONTEXT_DOMAIN="localhost"
+export CONTEXT_SEED=1
+export CONTEXT_PORT=8000
+export CONTEXT_DOMAIN="localhost"
 SERVER_DIR=
 
 NAME=link-context
