@@ -99,12 +99,6 @@ app.get('/:id', function (req, res) {
       return res.status(404).jsonp({error: 'Not found.'});
     }
 
-    if (result.clicks) {
-      result.clicks++;
-    } else {
-      result.clicks = 1;
-    }
-
     var rawData = {
       ip: req.connection.remoteAddress,
       ua: req.headers['user-agent'],
@@ -118,6 +112,11 @@ app.get('/:id', function (req, res) {
         clicks: [rawData]
       };
     }
+
+    // only count clicks that are not from a bot
+    result.clicks = result.raw.clicks.filter(function (item) {
+      return item.type !== 'bot';
+    }).length;
 
     _db.update({link: search}, result, function (err) {
       if (err) {
