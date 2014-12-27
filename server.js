@@ -47,7 +47,10 @@ if (+PORT === 80) {
 shortId.seed(+SEED);
 app.use(bodyParser.json());
 app.use(expressValidator());
-app.use(device.capture());
+app.use(device.capture({
+  emptyUserAgentDeviceType: 'bot',
+  unknownUserAgentDeviceType: 'bot'
+}));
 
 // new link route
 app.get('/v0/new/link/', function (req, res) {
