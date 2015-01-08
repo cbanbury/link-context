@@ -13,6 +13,7 @@ var server = require('../server');
 var MongoClient = require('mongodb').MongoClient;
 var _db;
 var _links;
+var _users;
 
 before(function (done) {
   agent = request.agent(server);
@@ -24,16 +25,19 @@ before(function (done) {
 
     _db = db;
     _links = db.collection('links');
+    _users = db.collection('users');
     done();
   });
 });
 
 afterEach(function () {
   _links.drop();
+  _users.drop();
 });
 
 after(function () {
   agent.app.close();
+  _db.dropDatabase();
   _db.close();
 });
 
@@ -235,6 +239,67 @@ describe('GET /v0/search/', function () {
 
       agent.get('/v0/search/?context=' + context).end(function (err, result) {
         chai.expect(result.body[0]._id).to.not.exist;
+        done();
+      });
+    });
+  });
+});
+
+describe('PUT /v0/signup/', function () {
+  it('should respond with 400 if username and password not provided', function (done) {
+    agent.put('/v0/signup/').send({password: 'ad2r99'}).expect(400, done);
+  });
+
+  it('should respond with 400 if username not provided', function (done) {
+    agent.put('/v0/signup/').send({password: 'ad2r99'}).expect(400, done);
+  });
+
+  it('should respond with 400 if password not provided', function (done) {
+    agent.put('/v0/signup/').send({username: 'bob'}).expect(400, done);
+  });
+
+  it('should resond with 400 if username already exists', function (done) {
+    var testData = {
+      _id: 'bob',
+      password: '12cav3832'
+    };
+
+    _users.insert(testData, function (err) {
+      if (err) {
+        done(err);
+      }
+
+      agent.put('/v0/signup/').send({username: 'bob', password: '123bcbd'}).expect(400, done);
+    });
+  });
+
+  it('should respond with 200 on success', function (done) {
+    agent.put('/v0/signup/').send({username: 'bob', password: '12bcbudjv4'}).expect(200, done);
+  });
+
+  it('should save username to `_id` field in users collection', function (done) {
+    agent.put('/v0/signup/').send({username: 'bob', password: '12bcbudjv4'}).end(function () {
+      _users.findOne({_id: 'bob'}, function (err, result) {
+        if (err) {
+          done(err);
+        }
+
+        chai.expect(result).to.exist;
+        done();
+      });
+    });
+  });
+
+  it('should save password to `pass_hash` field in users collection', function (done) {
+    var expected = '12bcbudjv4';
+
+    agent.put('/v0/signup/').send({username: 'bob', password: expected }).end(function () {
+      _users.findOne({_id: 'bob'}, function (err, result) {
+        if (err) {
+          done(err);
+        }
+
+        chai.expect(result.pass_hash).to.equal(expected);
         done();
       });
     });

@@ -175,7 +175,7 @@ app.get('/v0/search/', function (req, res) {
 });
 
 // user registration
-app.post('/v0/register', function (req, res) {
+app.put('/v0/signup/', function (req, res) {
   req.checkBody('username', 'required').notEmpty();
   req.checkBody('password', 'required').notEmpty();
 
@@ -183,6 +183,13 @@ app.post('/v0/register', function (req, res) {
     return res.status(400).jsonp({ error: 'Bad request'});
   }
 
+  _users.insert({_id: req.body.username, pass_hash: req.body.password}, function (err) {
+    if (err) {
+      return res.status(400).jsonp({error: 'Bad request'});
+    }
+
+    return res.status(200).jsonp({message: 'user created successfully', username: req.body.username});
+  });
 });
 
 process.on('message', function (message) {
