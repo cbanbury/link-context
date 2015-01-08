@@ -7,11 +7,14 @@ var bodyParser = require('body-parser');
 var device = require('express-device');
 var expressValidator = require('express-validator');
 var url = require('url');
+var passport = require('passport');
 
 // SECTION: Database configuration
 var MongoClient = require('mongodb').MongoClient;
 
 var _db;
+var _links;
+var _users;
 
 var connectionString = 'mongodb://localhost:27017/asc';
 
@@ -24,7 +27,9 @@ MongoClient.connect(connectionString, function (err, db) {
     console.log('Error: Unable to connect to MongoDB');
   }
 
-  _db = db.collection('links');
+  _db = db;
+  _links = db.collection('links');
+  _users = db.collection('users');
 });
 
 // SECTION: App config
@@ -63,7 +68,7 @@ app.get('/v0/new/link/', function (req, res) {
 
   var link = BASE_ROUTE + shortId.generate();
 
-  _db.insert({
+  _links.insert({
     link: link,
     redirect: req.query.redirect,
     context: req.query.context
@@ -86,7 +91,7 @@ app.get('/:id', function (req, res) {
 
   var search = BASE_ROUTE + req.params.id;
 
-  _db.findOne({link: search}, function (err, result) {
+  _links.findOne({link: search}, function (err, result) {
     if (err) {
       return res.status(500).jsonp({error: 'Internal server error.'});
     }
@@ -118,7 +123,7 @@ app.get('/:id', function (req, res) {
       return item.type !== 'bot';
     }).length;
 
-    _db.update({link: search}, result, function (err) {
+    _links.update({link: search}, result, function (err) {
       if (err) {
         console.log('Error saving clicks ' + JSON.stringify(result));
       }
@@ -137,7 +142,7 @@ app.get('/v0/link/', function (req, res) {
     return res.status(400).jsonp({error: 'Bad request'});
   }
 
-  _db.findOne({link: req.query.path}, {_id: 0}, function (err, result) {
+  _links.findOne({link: req.query.path}, {_id: 0}, function (err, result) {
     if (err) {
       return res.status(500).jsonp({error: 'Internal server error.'});
     }
@@ -160,13 +165,24 @@ app.get('/v0/search/', function (req, res) {
 
   var query = {context: { $regex: req.query.context }};
 
-  _db.find(query, {_id: 0}).toArray(function (err, result) {
+  _links.find(query, {_id: 0}).toArray(function (err, result) {
     if (err) {
       return res.status(500).jsonp({error: 'Internal server error.'});
     }
 
     return res.jsonp(result);
   });
+});
+
+// user registration
+app.post('/v0/register', function (req, res) {
+  req.checkBody('username', 'required').notEmpty();
+  req.checkBody('password', 'required').notEmpty();
+
+  if (req.validationErrors()) {
+    return res.status(400).jsonp({ error: 'Bad request'});
+  }
+
 });
 
 process.on('message', function (message) {
