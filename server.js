@@ -7,7 +7,9 @@ var bodyParser = require('body-parser');
 var device = require('express-device');
 var expressValidator = require('express-validator');
 var url = require('url');
+
 var passport = require('passport');
+var _ = require('lodash');
 
 // SECTION: Database configuration
 var MongoClient = require('mongodb').MongoClient;
@@ -33,23 +35,13 @@ MongoClient.connect(connectionString, function (err, db) {
 });
 
 // SECTION: App config
-var SEED = process.env.CONTEXT_SEED || 1;
-var PORT = process.env.CONTEXT_PORT || 8000;
+var config = require('./init/00-config');
 
-if (process.env.NODE_ENV === 'test') {
-    PORT = 8001;
-}
-
-var DOMAIN = process.env.CONTEXT_DOMAIN || 'localhost';
-
-var BASE_ROUTE = 'http://' + DOMAIN + ':' + PORT + '/';
-
-if (+PORT === 80) {
-  BASE_ROUTE = 'http://' + DOMAIN + '/';
-}
+// whitelist for routes we want to protect like signup
+var whitelist = ['127.0.0.1'];
 
 // SECTION: Main app
-shortId.seed(+SEED);
+shortId.seed(+config.seed);
 app.use(bodyParser.json());
 app.use(expressValidator());
 app.use(device.capture({
@@ -66,7 +58,7 @@ app.get('/v0/new/link/', function (req, res) {
     return res.status(400).jsonp({error: 'Bad request'});
   }
 
-  var link = BASE_ROUTE + shortId.generate();
+  var link = config.host_string + shortId.generate();
 
   _links.insert({
     link: link,
@@ -89,7 +81,7 @@ app.get('/:id', function (req, res) {
     return res.status(404).jsonp({error: 'Not found.'});
   }
 
-  var search = BASE_ROUTE + req.params.id;
+  var search = config.host_string + req.params.id;
 
   _links.findOne({link: search}, function (err, result) {
     if (err) {
@@ -179,6 +171,11 @@ app.put('/v0/signup/', function (req, res) {
   req.checkBody('username', 'required').notEmpty();
   req.checkBody('password', 'required').notEmpty();
 
+  // TODO: find a more convenient way to handle this.
+  if (!_.contains(whitelist, req.ip)) {
+    return res.status(404);
+  }
+
   if (req.validationErrors()) {
     return res.status(400).jsonp({ error: 'Bad request'});
   }
@@ -192,6 +189,11 @@ app.put('/v0/signup/', function (req, res) {
   });
 });
 
+app.post('/v0/login/', function (req, res) {
+  req.checkBody('username', 'required').notEmpty();
+  req.checkBody('password', 'required').notEmpty();
+});
+
 process.on('message', function (message) {
   if (message === 'shutdown') {
     // TODO: gracefully exit instead of instant termination
@@ -200,10 +202,10 @@ process.on('message', function (message) {
   }
 });
 
-module.exports = app.listen(PORT, function () {
+module.exports = app.listen(config.port, function () {
   if (process.send) {
     process.send('online');
   }
 
-  console.log('server started on port: ' + PORT);
+  console.log('server started on port: ' + config.port);
 });
