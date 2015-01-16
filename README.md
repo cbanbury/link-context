@@ -1,3 +1,6 @@
+# Status
+[![Circle CI](https://circleci.com/gh/cbanbury/link-context/tree/master.svg?style=svg)](https://circleci.com/gh/cbanbury/link-context/tree/master)
+
 # Short URLs with context
 A simple server to generate unique short URLs and attach some contextual data to them.
 
