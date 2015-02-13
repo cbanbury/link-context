@@ -13,7 +13,7 @@ var MongoClient = require('mongodb').MongoClient;
 
 var _db;
 
-var connectionString = 'mongodb://localhost:27017/asc';
+var connectionString = process.env.MONGOLAB_URI;
 
 if (process.env.NODE_ENV === 'test') {
   connectionString = 'mongodb://localhost:27017/link-context-test'
