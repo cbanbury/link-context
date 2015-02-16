@@ -29,7 +29,7 @@ MongoClient.connect(connectionString, function (err, db) {
 
 // SECTION: App config
 var SEED = process.env.CONTEXT_SEED || 1;
-var PORT = process.env.CONTEXT_PORT || 8000;
+var PORT = process.env.PORT || 5000;
 
 if (process.env.NODE_ENV === 'test') {
     PORT = 8001;
@@ -39,7 +39,7 @@ var DOMAIN = process.env.CONTEXT_DOMAIN || 'localhost';
 
 var BASE_ROUTE = 'http://' + DOMAIN + ':' + PORT + '/';
 
-if (+PORT === 5000) {
+if (NODE_ENV === 'production') {
   BASE_ROUTE = 'http://' + DOMAIN + '/';
 }
 
@@ -177,10 +177,10 @@ process.on('message', function (message) {
   }
 });
 
-module.exports = app.listen(PORT, function () {
+module.exports = app.listen(process.env.PORT, function () {
   if (process.send) {
     process.send('online');
   }
 
-  console.log('server started on port: ' + PORT);
+  console.log('server started on port: ' + process.env.PORT);
 });
