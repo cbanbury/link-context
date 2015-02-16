@@ -39,7 +39,7 @@ var DOMAIN = process.env.CONTEXT_DOMAIN || 'localhost';
 
 var BASE_ROUTE = 'http://' + DOMAIN + ':' + PORT + '/';
 
-if (NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'production') {
   BASE_ROUTE = 'http://' + DOMAIN + '/';
 }
 
